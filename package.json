@@ -1,1 +1,30 @@
-{"dependencies":{"@x402/evm":"^2.27.0","@x402/express":"^2.27.0","dotenv":"^18.0.5","express":"^5.2.1","viem":"^2.56.9"},"description":"Open-source pay-per-call billing layer for AI agents on Base — metered gateway, per-wallet spend caps, signed usage receipts, agent-readable service registry.","engines":{"node":">=20"},"keywords":["x402","base","ai-agents","metering","pay-per-call"],"license":"MIT","main":"src/server.mjs","name":"metered","scripts":{"dev":"node --watch src/server.mjs","start":"node src/server.mjs","test":"node --test test/meter.test.mjs"},"type":"module","version":"0.1.0"}
+{
+  "dependencies": {
+    "@x402/evm": "^2.27.0",
+    "@x402/express": "^2.27.0",
+    "express": "^5.2.1",
+    "viem": "^2.56.9",
+    "@x402/fetch": "^2.27.0"
+  },
+  "description": "Open-source pay-per-call billing layer for AI agents on Base — metered gateway, per-wallet spend caps, signed usage receipts, agent-readable service registry.",
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "x402",
+    "base",
+    "ai-agents",
+    "metering",
+    "pay-per-call"
+  ],
+  "license": "MIT",
+  "main": "src/server.mjs",
+  "name": "metered",
+  "scripts": {
+    "dev": "node --watch src/server.mjs",
+    "start": "node src/server.mjs",
+    "test": "node --test test/meter.test.mjs test/upstream.test.mjs"
+  },
+  "type": "module",
+  "version": "0.1.0"
+}

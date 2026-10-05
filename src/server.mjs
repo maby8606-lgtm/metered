@@ -2,14 +2,16 @@
 // and signed usage receipts. Payments settle via the x402 facilitator straight
 // to PAY_TO — Metered never custodies user funds (see docs/DESIGN.md).
 //
-// NOTE: x402 payment verification wiring (@x402/express) is intentionally left
-// for the build — the cap + receipt middleware below is the part that's new.
+// NOTE: x402 payment verification on Metered's own inbound leg
+// (@x402/express) is the remaining build item. The upstream payment leg
+// (src/upstream.mjs) handles paying the wrapped services.
 
 import "dotenv/config";
 import express from "express";
 import { checkCap, recordSpend } from "./meter.mjs";
 import { signReceipt } from "./receipts.mjs";
 import { manifest, llmsTxt } from "./registry.mjs";
+import { payUpstream, isMock, announceMode } from "./upstream.mjs";
 
 const app = express();
 app.use(express.json());
@@ -25,6 +27,8 @@ app.get("/health", (_req, res) => res.json({ ok: true, billing: "x402", chain: "
 // --- metered proxy ----------------------------------------------------------
 // TODO(build): verify the x402 payment (402 -> settle -> txHash) before proxying.
 // After settlement, plug in the real caller wallet + tx hash here.
+// Express 5 (path-to-regexp v8) needs a named wildcard; req.path still gives
+// the full request path for the service lookup below.
 app.post("/v1/*splat", async (req, res) => {
   const service = SERVICES[req.path];
   if (!service) return res.status(404).json({ error: "unknown service" });
@@ -45,23 +49,32 @@ app.post("/v1/*splat", async (req, res) => {
   }
 
   try {
-    // TODO(build): forward req.body to service.upstream with the x402 payment
-    // proof attached, stream the response back.
-    const upstreamRes = await fetch(service.upstream, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(req.body ?? {}),
-    });
-    const data = await upstreamRes.json().catch(() => null);
-
+    // Upstream payment leg (mock or real x402, per MOCK_UPSTREAM).
+    // The cap check, spend recording, receipt signing and envelope below
+    // are identical in both modes — only the upstream leg changes.
+    const { data, paid } = await payUpstream(service, req.body ?? {});
     const spent = recordSpend(wallet, service.priceUsdc);
-    const receipt = signReceipt({ wallet, service: service.id, priceUsdc: service.priceUsdc, txHash });
+    const receipt = signReceipt({
+      wallet,
+      service: service.id,
+      priceUsdc: service.priceUsdc,
+      txHash: paid.txHash,
+      mock: isMock(),
+    });
 
-    res.json({ data, receipt, spend: { spentToday: spent, cap: cap.cap } });
+    res.json({
+      data,
+      receipt,
+      spend: { spentToday: spent, cap: cap.cap },
+      upstream: { mock: isMock(), id: paid.id, priceUsdc: paid.priceUsdc, txHash: paid.txHash },
+    });
   } catch (err) {
     res.status(502).json({ error: "upstream failed", detail: String(err?.message || err) });
   }
 });
 
 const PORT = Number(process.env.PORT || 4021);
-app.listen(PORT, () => console.log(`metered listening on :${PORT}`));
+app.listen(PORT, () => {
+  announceMode();
+  console.log(`metered listening on :${PORT}`);
+});

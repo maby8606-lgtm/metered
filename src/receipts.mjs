@@ -7,13 +7,13 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 const SECRET = process.env.RECEIPT_SECRET || "change-me";
 
-function canonical({ wallet, service, priceUsdc, txHash, timestamp }) {
-  return [wallet.toLowerCase(), service, String(priceUsdc), txHash, String(timestamp)].join("|");
+function canonical({ wallet, service, priceUsdc, txHash, mock, timestamp }) {
+  return [wallet.toLowerCase(), service, String(priceUsdc), txHash, mock ? "mock" : "live", String(timestamp)].join("|");
 }
 
-export function signReceipt({ wallet, service, priceUsdc, txHash }) {
+export function signReceipt({ wallet, service, priceUsdc, txHash, mock = false }) {
   const timestamp = Date.now();
-  const payload = { wallet: wallet.toLowerCase(), service, priceUsdc, txHash, timestamp };
+  const payload = { wallet: wallet.toLowerCase(), service, priceUsdc, txHash, mock: Boolean(mock), timestamp };
   const sig = createHmac("sha256", SECRET).update(canonical(payload)).digest("hex");
   return { ...payload, sig, kid: "v1" };
 }

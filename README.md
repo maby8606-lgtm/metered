@@ -19,6 +19,29 @@ npm run dev            # gateway on :4021
 - Every paid call returns `{ data, receipt, spend }` — the receipt is
   HMAC-signed and verifiable offline.
 
+## Mock mode for demo without funded spender wallet
+
+`MOCK_UPSTREAM=true` makes the gateway skip the real x402 upstream payment and
+return canned sample data with `txHash: "0xMOCK"`. Real mode uses the same flow
+with x402-paid upstream calls — the spender wallet (`UPSTREAM_SPENDER_KEY`)
+pays each wrapped service's 402 challenge via the x402 facilitator, so the end
+caller only ever settles with Metered.
+
+What stays identical in both modes: the 402 issuance, caller verification,
+spend caps, spend recording, signed receipts, and the response envelope. The
+mock is disclosed, never hidden:
+
+- the response envelope carries `upstream: { mock: true, ... }`
+- the signed receipt carries `mock: true` (signature-bound — flipping it
+  invalidates the receipt)
+- canned data is labeled `sample: true` with a note naming MOCK_UPSTREAM
+- boot logs `MOCK_UPSTREAM=true — upstream payments are simulated. Production path is real.`
+
+Real is the default and fail-closed: mock runs only when the var is exactly
+`"true"`, and real mode refuses to proceed without `UPSTREAM_SPENDER_KEY`.
+Demo line for the pitch: "gateway, caps, and receipts are live; the upstream
+payment leg is simulated in this demo build, one env var flips it."
+
 ## Disclosure of pre-existing work
 
 The two services Metered wraps in this demo — `/extract` ($0.01/call) and
