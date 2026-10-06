@@ -16,6 +16,11 @@ export function isMock() {
   return process.env.MOCK_UPSTREAM === "true";
 }
 
+// What Metered pays per upstream call (verified live 2026-10-05).
+// Server-side only — never in the public manifest. Our costs are private.
+// Caller prices (with margin) live in registry.mjs.
+export const UPSTREAM_PRICES = { extract: 0.01, "extract-fields": 0.02 };
+
 export function announceMode() {
   if (isMock()) {
     console.log("MOCK_UPSTREAM=true — upstream payments are simulated. Production path is real.");

@@ -1,3 +1,7 @@
+// Line 1: import "dotenv/config" is REQUIRED. Do not remove.
+// Without it, MOCK_UPSTREAM / PAY_TO / RECEIPT_SECRET silently read as unset.
+import "dotenv/config";
+
 // Metered gateway: wraps upstream x402 services with per-wallet spend caps
 // and signed usage receipts. Payments settle via the x402 facilitator straight
 // to PAY_TO — Metered never custodies user funds (see docs/DESIGN.md).
@@ -6,12 +10,11 @@
 // (@x402/express) is the remaining build item. The upstream payment leg
 // (src/upstream.mjs) handles paying the wrapped services.
 
-import "dotenv/config";
 import express from "express";
-import { checkCap, recordSpend } from "./meter.mjs";
+import { checkCap, recordSpend, recordServiceRevenue, recordUpstreamSpend, getEconomics } from "./meter.mjs";
 import { signReceipt } from "./receipts.mjs";
 import { manifest, llmsTxt } from "./registry.mjs";
-import { payUpstream, isMock, announceMode } from "./upstream.mjs";
+import { payUpstream, isMock, announceMode, UPSTREAM_PRICES } from "./upstream.mjs";
 
 const app = express();
 app.use(express.json());
@@ -23,6 +26,13 @@ const SERVICES = Object.fromEntries(manifest().services.map((s) => [s.path, s]))
 app.get("/.well-known/metered.json", (_req, res) => res.json(manifest()));
 app.get("/llms.txt", (_req, res) => res.type("text/plain").send(llmsTxt()));
 app.get("/health", (_req, res) => res.json({ ok: true, billing: "x402", chain: "eip155:8453" }));
+
+// Unit economics, daily. Free to read — it's our own P&L, and the demo
+// shows it on screen. mode is "mock"|"live" (disclosed, like receipts).
+app.get("/economics", (_req, res) => {
+  const prices = Object.fromEntries(manifest().services.map((s) => [s.id, s.priceUsdc]));
+  res.json({ ...getEconomics(prices, UPSTREAM_PRICES), mode: isMock() ? "mock" : "live" });
+});
 
 // --- metered proxy ----------------------------------------------------------
 // TODO(build): verify the x402 payment (402 -> settle -> txHash) before proxying.
@@ -54,6 +64,10 @@ app.post("/v1/*splat", async (req, res) => {
     // are identical in both modes — only the upstream leg changes.
     const { data, paid } = await payUpstream(service, req.body ?? {});
     const spent = recordSpend(wallet, service.priceUsdc);
+    // Economics: caller revenue at our price, upstream cost at the upstream price.
+    // In mock mode the cost is modeled (mode is disclosed in the response).
+    recordServiceRevenue(service.id, service.priceUsdc);
+    recordUpstreamSpend(service.id, UPSTREAM_PRICES[service.id] ?? 0);
     const receipt = signReceipt({
       wallet,
       service: service.id,

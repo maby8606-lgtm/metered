@@ -7,7 +7,7 @@ const SERVICES = [
     id: "extract",
     path: "/v1/extract",
     description: "URL in, markdown out. Pay-per-call web extraction for agents.",
-    priceUsdc: 0.01,
+    priceUsdc: 0.015, // caller price; upstream cost 0.01 -> margin 0.005 (set 2026-10-05)
     upstream: process.env.UPSTREAM_EXTRACT || "",
     preExisting: true, // live since 2026-09-28 — disclosed, see README
   },
@@ -15,7 +15,7 @@ const SERVICES = [
     id: "extract-fields",
     path: "/v1/extract-fields",
     description: "Text in, JSON out. Deterministic regex field extraction; returns null instead of hallucinating.",
-    priceUsdc: 0.02,
+    priceUsdc: 0.025, // caller price; upstream cost 0.02 -> margin 0.005 (set 2026-10-05)
     upstream: process.env.UPSTREAM_EXTRACT_FIELDS || "",
     preExisting: true, // live since 2026-09-28 — disclosed, see README
   },
