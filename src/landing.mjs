@@ -119,7 +119,7 @@ export function landingPage({ host }) {
   <h1>Billing infrastructure for the agent economy.</h1>
   <p class="sub">Metered sits in front of any priced x402 API. Callers pay Metered; Metered pays upstreams and keeps the spread. Spend caps, signed receipts, per-day P&amp;L &mdash; all in one gateway, settled in USDC on Base.</p>
   <div class="cta-row">
-    <a class="btn primary" href="${repo}">Read the docs</a>
+    <a class="btn primary" href="${repo}">View On Github</a>
     <a class="btn secondary" href="/economics">See live economics</a>
   </div>
 </div>
