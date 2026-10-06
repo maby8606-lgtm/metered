@@ -14,6 +14,7 @@ import express from "express";
 import { checkCap, recordSpend, recordServiceRevenue, recordUpstreamSpend, getEconomics } from "./meter.mjs";
 import { signReceipt } from "./receipts.mjs";
 import { manifest, llmsTxt } from "./registry.mjs";
+import { landingPage } from "./landing.mjs";
 import { payUpstream, isMock, announceMode, UPSTREAM_PRICES } from "./upstream.mjs";
 
 const app = express();
@@ -23,6 +24,7 @@ const DEFAULT_CAP = Number(process.env.DEFAULT_DAILY_CAP_USDC || 5);
 const SERVICES = Object.fromEntries(manifest().services.map((s) => [s.path, s]));
 
 // --- discovery (free) -------------------------------------------------------
+app.get("/", (req, res) => res.type("html").send(landingPage({ host: req.get("host") || "localhost" })));
 app.get("/.well-known/metered.json", (_req, res) => res.json(manifest()));
 app.get("/llms.txt", (_req, res) => res.type("text/plain").send(llmsTxt()));
 app.get("/health", (_req, res) => res.json({ ok: true, billing: "x402", chain: "eip155:8453" }));
