@@ -1,0 +1,29 @@
+# Render Blueprint — one-click deploy of the Metered gateway.
+# Dashboard: New + -> Blueprint -> select the metered repo -> Apply.
+# RECEIPT_SECRET uses sync:false, so Render prompts for it at apply time.
+# Generate a FRESH one (openssl rand -hex 32) — do not reuse the local secret.
+services:
+  - type: web
+    name: metered
+    runtime: node
+    plan: free
+    region: frankfurt # closest Render region to Accra, Ghana
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: PAY_TO
+        value: 0xea6c6d0361a758e51004fc5b0c31a3c6b2408858
+      - key: RECEIPT_SECRET
+        sync: false
+      - key: UPSTREAM_EXTRACT
+        value: https://x402-extract-wg5z.onrender.com/extract
+      - key: UPSTREAM_EXTRACT_FIELDS
+        value: https://x402-extract-wg5z.onrender.com/extract-fields
+      - key: DEFAULT_DAILY_CAP_USDC
+        value: 5
+      - key: MOCK_UPSTREAM
+        value: true
+      # NOT set on purpose (mock mode needs neither):
+      # CDP_API_KEY_ID, CDP_API_KEY_SECRET, UPSTREAM_SPENDER_KEY
+      # PORT is injected by Render; the server reads process.env.PORT.
