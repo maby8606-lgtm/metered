@@ -14,6 +14,12 @@ design (funds never touch our contracts).
 `/economics`, and the full endpoint surface. Upstream payments are simulated
 in the demo build (see Mock mode below).
 
+> **In the wild:** the upstream services Metered wraps took their first external
+> payment on 2026-10-08 — a 0.02 USDC call to `/extract-fields` from an outside
+> wallet (`0x6a0b…4518`), settled on Base mainnet in block 52325709. One call,
+> one stranger's agent — proof the endpoints behind the gateway are used by
+> people who aren't us.
+
 ## Quickstart
 
 ```bash
