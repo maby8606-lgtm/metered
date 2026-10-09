@@ -12,9 +12,19 @@
 // Exit 0 = VALID, 1 = INVALID. Needs the same RECEIPT_SECRET the server used
 // (or a .env in the repo root).
 
-import "dotenv/config";
+import { config } from "dotenv";
 import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { verifyReceipt } from "../src/receipts.mjs";
+
+// Load the repo-root .env by file location, not by the caller's working
+// directory. dotenv's default path is process.cwd()/.env — the demo runs
+// this from a second terminal whose cwd is not the repo, which silently
+// loaded nothing and fell back to the default secret. (config() never
+// overrides a RECEIPT_SECRET already set in the environment, so explicit
+// shell exports and demo.sh keep working exactly as before.)
+config({ path: resolve(dirname(fileURLToPath(import.meta.url)), "../.env") });
 
 function readInput() {
   const raw = process.argv[2] ? readFileSync(process.argv[2], "utf8") : readFileSync(0, "utf8");
